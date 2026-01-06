@@ -164,7 +164,7 @@ jobs:
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: 加载config & DIY_P3_SH
-      if: github.event.inputs.OPENCLASH == 'true'
+      if: github.event.inputs.OPENCLASH == 'false'
       run: |
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
         chmod +x $DIY_P3_SH
@@ -361,7 +361,7 @@ jobs:
         else
                 echo "- USB接口已启用" >> release.txt
         fi
-        if [[ "${{ github.event.inputs.OPENCLASH }}" == 'true' ]]; then
+        if [[ "${{ github.event.inputs.OPENCLASH }}" == 'false' ]]; then
                 echo "- 已编译科学上网" >> release.txt
         else
                 echo "- 未编译科学上网" >> release.txt
