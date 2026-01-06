@@ -1,31 +1,31 @@
 #
-# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
+# 版权所有 © 2019-2020 P3TERX <https://p3terx.com>
 #
-# This is free software, licensed under the MIT License.
-# See /LICENSE for more information.
+# 这是自由软件，采用MIT许可证授权。
+# 请参阅 /LICENSE 以获取更多信息。
 #
 # https://github.com/P3TERX/Actions-OpenWrt
-# Description: Build OpenWrt using GitHub Actions
+# 描述：使用GitHub Actions构建OpenWrt
 #
 
-name: hanwckf-build
+name: hanwckf-构建
 
-on:
-  repository_dispatch:
+触发:
+仓库调度:
   workflow_dispatch:
     inputs:
       LAN_IP:
-        description: 'Set LAN IP Address'
-        required: true
+描述: 设置局域网IP地址
+必填: 真
         default: '192.168.99.1'
       WIFI_DRIVER:
-        description: 'Choose WiFi Driver'
+选择WiFi驱动程序
         required: true
-        default: 'v7.6.7.2-fw-20240823(recommend)'
-        type: choice
-        options:
-        - v7.6.7.2-fw-20240823(recommend)
-        - v7.6.6.1-fw-20230306(recommend)
+默认: 
+类型: 选择
+选项:
+        - v7.6.7.2-fw-20240823（推荐）
+        - v7.6.6.1-fw-20230306（推荐）
         - v7.6.7.2-fw-default
         - v7.6.7.2-fw-20230306
         - v7.6.7.2-fw-20230330
@@ -39,41 +39,41 @@ on:
         - v7.6.6.1-fw-20231024
         - v7.6.6.1-fw-20240823
       EEPROM:
-        description: 'Use nx30pro eeprom and fixed WiFi MAC address'
-        required: true
-        default: true
-        type: boolean
-      EMMC_SPEED:
+描述: '使用nx30pro eeprom并固定WiFi MAC地址'
+必填: 真
+默认: 真
+类型: 布尔
+EMMC速度:
         description: 'Use eMMC highspeed'
-        required: true
-        default: true
-        type: boolean
+必填: 真
+默认: 真
+类型: 布尔
       USB:
-        description: 'Use USB Interface'
-        required: true
-        default: true
-        type: boolean
+描述: '使用USB接口'
+必填: 真
+默认: 真
+类型: 布尔
       DOCKERMAN:
-        description: 'Build luci-app-dockerman'
+描述: '构建luci-app-dockerman'
         required: true
-        default: true
-        type: boolean
+默认: 真
+类型: 布尔
       OPENCLASH:
         description: 'OPENCLASH'
         required: true
-        default: true
-        type: boolean
+默认: 真
+类型: 布尔
       APP_MTK:
-        description: 'Use luci-app-mtk wifi config'
-        required: true
-        default: false
-        type: boolean
+描述: '使用luci-app-mtk wifi配置'
+必填: 真
+默认: false
+类型: 布尔
       ssh:
-        description: 'SSH connection to Actions'
-        required: false
-        default: 'false'
-#  schedule:
-#    - cron: 0 16 * * *
+描述: 'SSH连接到Actions'
+必填: false
+默认: 'false'
+# 计划：
+# - cron：0 16 * * *
 
 env:
   ###############手动修改##############
@@ -253,14 +253,14 @@ jobs:
 
     - name: SSH链接管理
       uses: P3TERX/ssh2actions@v1.0.0
-      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+如果: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
       env:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
     - name: 下载安装包
       id: package
-      run: |
+运行: |
         cd openwrt
         make defconfig
         make download -j$(nproc)
@@ -269,14 +269,14 @@ jobs:
 
     - name: 编译固件
       id: compile
-      run: |
+运行: |
         cd openwrt
-        echo -e "$(nproc) thread compile"
+echo -e "$(nproc) 线程编译"
         make -j$(nproc) || make -j1 || make -j1 V=s
         
         sed -n 's/.*lan) ipad=${ipaddr:-"\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)"} ;;.*/\1/p' package/base-files/files/bin/config_generate | head -n 1 > IP_ADDR
         [ -s IP_ADDR ] && echo "IP_ADDR=$(cat IP_ADDR)" >> $GITHUB_ENV
-        if grep -q 'CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7661=y' .config; then
+如果 grep -q'CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7661=y'.config; 则
                 echo "WIFI_VERSION=-v7661" >> $GITHUB_ENV
         else
                 echo "WIFI_VERSION=-v7672" >> $GITHUB_ENV
@@ -291,7 +291,7 @@ jobs:
         else
                 echo "WIFI_INTERFACE=" >> $GITHUB_ENV
         fi
-        if grep -q 'CONFIG_PACKAGE_luci-app-dockerman=y' .config; then
+如果 grep -q 'CONFIG_PACKAGE_luci-app-dockerman=y' .config; 则
                 echo "BUILD_DOCKERMAN=-docker" >> $GITHUB_ENV
         else
                 echo "BUILD_DOCKERMAN=" >> $GITHUB_ENV
@@ -300,82 +300,82 @@ jobs:
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 查看磁盘使用情况
-      if: (!cancelled())
+如果: (!cancelled())
       run: df -hT
 
     - name: 整理文件并重命名
-      id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
-      run: | 
+      id: 组织
+env.UPLOAD_FIRMWARE ==&& !已取消()
+运行: | 
         mapfile -t devices < <(grep '^CONFIG_TARGET_DEVICE.*=y' openwrt/.config | sed -r 's/.*DEVICE_(.*)=y/\1/')
         cd openwrt/bin/targets/*/*
         rm -rf packages
         for val in "${devices[@]}"; do
-          rename "s/.*${val}/${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${val}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}/" *
+重命名“s/.*${val}/${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${val}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}/” *
           echo "$val"
         done
-        echo "当前路径：$PWD"
+        echo 当前路径：$PWD
         echo "当前路径下的文件："
         ls -l
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+        echo 固件=$PWD >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 打包上传固件到Actions Artifacts
+    - name: 将固件打包上传至Actions制品
       uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
+如果: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: ${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}
         path: ${{ env.FIRMWARE }}
 
     - name: 生成固件Release标签
-      id: tag
+      id: 标签
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      run: |
-        touch release.txt
+运行: |
+创建release.txt
         echo "- 使用源码：${{ env.REPO_URL }}" >> release.txt
         echo "- 使用分支：${{ env.REPO_BRANCH }}" >> release.txt
         echo "- 登录地址：${{ env.IP_ADDR }}" >> release.txt
         echo "- 使用WiFi驱动${{ github.event.inputs.WIFI_DRIVER }}" >> release.txt
         if [[ "${{ env.EEPROM }}" == '-eeprom' ]]; then
                echo "- 使用nx30pro高功率eeprom并固定WiFi MAC地址" >> release.txt
-        else
-               echo "- 未使用nx30pro高功率eeprom未固定WiFi MAC地址" >> release.txt
+否则
+               echo “- 未使用nx30pro高功率eeprom未固定WiFi MAC地址” >> release.txt
         fi
-        if [[ "${{ env.WIFI_INTERFACE }}" == '-mtwifi' ]]; then
+如果[[ "${{ env.WIFI_INTERFACE }}" == '-mtwifi' ]]; 则
                 echo "- 使用hanwckf mtwifi-cfg原生luci无线配置工具" >> release.txt
-        else
+否则
                 echo "- 使用mtk-sdk luci-app-mtk无线配置工具" >> release.txt
         fi
         if [[ "${{ env.BUILD_DOCKERMAN }}" == '-docker' ]]; then
                 echo "- 已编译luci-app-dockerman" >> release.txt
-        else
+否则
                 echo "- 未编译luci-app-dockerman" >> release.txt
         fi
         if [[ "${{ github.event.inputs.EMMC_SPEED }}" == 'true' ]]; then
                 echo "- eMMC使用highspeed" >> release.txt
-        else
+否则
                 echo "- eMMC使用26MHz" >> release.txt
         fi
-        if [[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
+如果[[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
                 echo "- USB接口已禁用" >> release.txt
-        else
+否则
                 echo "- USB接口已启用" >> release.txt
         fi
-        if [[ "${{ github.event.inputs.OPENCLASH }}" == 'true' ]]; then
+如果 [[ "${{ github.event.inputs.OPENCLASH }}" == 'true' ]]; 则
                 echo "- 已编译科学上网" >> release.txt
-        else
-                echo "- 未编译科学上网" >> release.txt
+否则
+                echo “- 未编译科学上网”>> release.txt
         fi
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 发布固件至Release
+    - name: 将固件发布到Release
       uses: softprops/action-gh-release@v2.1.0
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # ✅ 添加冒号+空格
       with:
-        files: ${{ env.FIRMWARE }}/*
+        file: ${{ env.FIRMWARE }}  # ✅ 中文"文件"改英文
         name: ${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}
-        tag_name: ${{ steps.tag.outputs.release_tag }}
+        tag_name: ${{ steps.tag.outputs.release_tag }}  # ✅ 中文"标签_名称"改英文
         body_path: release.txt
