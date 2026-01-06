@@ -1,31 +1,31 @@
 #
-# 版权所有 © 2019-2020 P3TERX <https://p3terx.com>
+# Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
 #
-# 这是自由软件，采用MIT许可证授权。
-# 请参阅 /LICENSE 以获取更多信息。
+# This is free software, licensed under the MIT License.
+# See /LICENSE for more information.
 #
 # https://github.com/P3TERX/Actions-OpenWrt
-# 描述：使用GitHub Actions构建OpenWrt
+# Description: Build OpenWrt using GitHub Actions
 #
+###############手动修改##############
+name: HY3000-hanwckf
 
-name: hanwckf-构建
-
-触发:
-仓库调度:
+on:
+  repository_dispatch:
   workflow_dispatch:
     inputs:
       LAN_IP:
-描述: 设置局域网IP地址
-必填: 真
+        description: 'Set LAN IP Address'
+        required: true
         default: '192.168.6.1'
       WIFI_DRIVER:
-选择WiFi驱动程序
+        description: 'Choose WiFi Driver'
         required: true
-默认: 
-类型: 选择
-选项:
-        - v7.6.7.2-fw-20240823（推荐）
-        - v7.6.6.1-fw-20230306（推荐）
+        default: 'v7.6.6.1-fw-20230306(recommend)'
+        type: choice
+        options:
+        - v7.6.7.2-fw-20240823(recommend)
+        - v7.6.6.1-fw-20230306(recommend)
         - v7.6.7.2-fw-default
         - v7.6.7.2-fw-20230306
         - v7.6.7.2-fw-20230330
@@ -39,54 +39,54 @@ name: hanwckf-构建
         - v7.6.6.1-fw-20231024
         - v7.6.6.1-fw-20240823
       EEPROM:
-描述: '使用nx30pro eeprom并固定WiFi MAC地址'
-必填: 真
-默认: 真
-类型: 布尔
-EMMC速度:
-        description: 'Use eMMC highspeed'
-必填: 真
-默认: 真
-类型: 布尔
-      USB:
-描述: '使用USB接口'
-必填: 真
-默认: 真
-类型: 布尔
-      DOCKERMAN:
-描述: '构建luci-app-dockerman'
+        description: 'Use nx30pro eeprom and fixed WiFi MAC address'
         required: true
-默认: 真
-类型: 布尔
+        default: true
+        type: boolean
+      EMMC_SPEED:
+        description: 'Use eMMC highspeed'
+        required: true
+        default: true
+        type: boolean
+      USB:
+        description: 'Use USB Interface'
+        required: false
+        default: false
+        type: boolean
+      DOCKERMAN:
+        description: 'Build luci-app-dockerman'
+        required: true
+        default: true
+        type: boolean
       OPENCLASH:
         description: 'OPENCLASH'
         required: true
-默认: 真
-类型: 布尔
+        default: true
+        type: boolean
       APP_MTK:
-描述: '使用luci-app-mtk wifi配置'
-必填: 真
-默认: false
-类型: 布尔
+        description: 'Use luci-app-mtk wifi config'
+        required: true
+        default: false
+        type: boolean
       ssh:
-描述: 'SSH连接到Actions'
-必填: false
-默认: 'false'
-# 计划：
-# - cron：0 16 * * *
+        description: 'SSH connection to Actions'
+        required: false
+        default: 'false'
+#  schedule:
+#    - cron: 0 16 * * *
 
 env:
   ###############手动修改##############
   OPENWRT_NAME: hanwckf
   UPLOAD_TAG_NAME: philips-hy3000
-  REPO_URL: https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf
+  REPO_URL: https://github.com/Yuzhii0718/immortalwrt-mt798x-philips-hy3000
   REPO_BRANCH: openwrt-21.02
-  FEEDS_CONF: hanwckf-diy/feeds.conf.default
+  FEEDS_CONF: HY3000-hanwckf/feeds.conf.default
   HY3000_DTS_FILE: target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-philips-hy3000.dts
-  CONFIG_FILE: hanwckf-diy/.mtwifi-cfg.config
-  DIY_P1_SH: hanwckf-diy/diy-part1.sh
-  DIY_P2_SH: hanwckf-diy/diy-part2.sh
-  DIY_P3_SH: hanwckf-diy/diy-part3.sh
+  CONFIG_FILE: HY3000-hanwckf/HY3000USB.config
+  DIY_P1_SH: HY3000-hanwckf/diy-part1.sh
+  DIY_P2_SH: HY3000-hanwckf/diy-part2.sh
+  DIY_P3_SH: HY3000-hanwckf/diy-part3.sh
   SSH_ACTIONS: false
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
@@ -200,7 +200,7 @@ jobs:
         fi
         echo "Use WiFi Driver: $wifi_driver-fw-$firmware"
 
-    - name: 设置eMMC频率为26MHz
+    - name: 设置eMMC频率为52MHz
       if: github.event.inputs.EMMC_SPEED == 'false'
       run: |
         cd openwrt
@@ -208,7 +208,7 @@ jobs:
                 sed -i -e '/cap-mmc-highspeed;/d' "${{ env.HY3000_DTS_FILE }}"
         fi
         if grep -q 'max-frequency = <52000000>;' "${{ env.HY3000_DTS_FILE }}"; then
-                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <26000000>;/' "${{ env.HY3000_DTS_FILE }}"
+                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <52000000>;/' "${{ env.HY3000_DTS_FILE }}"
         fi
 
     - name: 禁用USB接口
@@ -223,9 +223,9 @@ jobs:
         cd openwrt
         wifi_driver=$(echo "${{ github.event.inputs.WIFI_DRIVER }}" | sed -E 's/^(v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
         if [ "$wifi_driver" == "v7.6.6.1" ]; then
-                cp $GITHUB_WORKSPACE/hanwckf-diy/mt79xx_20220907-8b55f5_eeprom.tar.xz dl/mt79xx_20220907-8b55f5.tar.xz
+                cp $GITHUB_WORKSPACE/HY3000-hanwckf/mt79xx_20220907-8b55f5_eeprom.tar.xz dl/mt79xx_20220907-8b55f5.tar.xz
         else
-                cp $GITHUB_WORKSPACE/hanwckf-diy/mt79xx_20231229-4012a0_eeprom.tar.xz dl/mt79xx_20231229-4012a0.tar.xz
+                cp $GITHUB_WORKSPACE/HY3000-hanwckf/mt79xx_20231229-4012a0_eeprom.tar.xz dl/mt79xx_20231229-4012a0.tar.xz
         fi
         ## 创建一个辅助文件。文件内容是写入MAC地址到dat文件，固定wifi MAC地址
         echo -e "\t\tlocal wifi0_mac=\"\$(mmc_get_mac_binary factory 0x74)\"
@@ -246,21 +246,21 @@ jobs:
         sed -i 's/CONFIG_PACKAGE_lua-cjson=y/CONFIG_WIFI_NORMAL_SETTING=y/g' .config
 
     - name: 编译dockerman
-      if: github.event.inputs.DOCKERMAN == 'true'
+      if: github.event.inputs.DOCKERMAN == 'false'
       run: |
         cd openwrt
         sed -i '/CONFIG_PACKAGE_luci-app-dockerman=y/d' .config
 
     - name: SSH链接管理
       uses: P3TERX/ssh2actions@v1.0.0
-如果: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
       env:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
     - name: 下载安装包
       id: package
-运行: |
+      run: |
         cd openwrt
         make defconfig
         make download -j$(nproc)
@@ -269,14 +269,14 @@ jobs:
 
     - name: 编译固件
       id: compile
-运行: |
+      run: |
         cd openwrt
-echo -e "$(nproc) 线程编译"
+        echo -e "$(nproc) thread compile"
         make -j$(nproc) || make -j1 || make -j1 V=s
         
         sed -n 's/.*lan) ipad=${ipaddr:-"\([0-9]\+\.[0-9]\+\.[0-9]\+\.[0-9]\+\)"} ;;.*/\1/p' package/base-files/files/bin/config_generate | head -n 1 > IP_ADDR
         [ -s IP_ADDR ] && echo "IP_ADDR=$(cat IP_ADDR)" >> $GITHUB_ENV
-如果 grep -q'CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7661=y'.config; 则
+        if grep -q 'CONFIG_MTK_MT_WIFI_DRIVER_VERSION_7661=y' .config; then
                 echo "WIFI_VERSION=-v7661" >> $GITHUB_ENV
         else
                 echo "WIFI_VERSION=-v7672" >> $GITHUB_ENV
@@ -291,7 +291,7 @@ echo -e "$(nproc) 线程编译"
         else
                 echo "WIFI_INTERFACE=" >> $GITHUB_ENV
         fi
-如果 grep -q 'CONFIG_PACKAGE_luci-app-dockerman=y' .config; 则
+        if grep -q 'CONFIG_PACKAGE_luci-app-dockerman=y' .config; then
                 echo "BUILD_DOCKERMAN=-docker" >> $GITHUB_ENV
         else
                 echo "BUILD_DOCKERMAN=" >> $GITHUB_ENV
@@ -300,71 +300,71 @@ echo -e "$(nproc) 线程编译"
         echo "status=success" >> $GITHUB_OUTPUT
 
     - name: 查看磁盘使用情况
-如果: (!cancelled())
+      if: (!cancelled())
       run: df -hT
 
     - name: 整理文件并重命名
-      id: 组织
-env.UPLOAD_FIRMWARE ==&& !已取消()
-运行: | 
+      id: organize
+      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+      run: | 
         mapfile -t devices < <(grep '^CONFIG_TARGET_DEVICE.*=y' openwrt/.config | sed -r 's/.*DEVICE_(.*)=y/\1/')
         cd openwrt/bin/targets/*/*
         rm -rf packages
         for val in "${devices[@]}"; do
-重命名“s/.*${val}/${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${val}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}/” *
+          rename "s/.*${val}/${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${val}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}/" *
           echo "$val"
         done
-        echo 当前路径：$PWD
+        echo "当前路径：$PWD"
         echo "当前路径下的文件："
         ls -l
-        echo 固件=$PWD >> $GITHUB_ENV
+        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 将固件打包上传至Actions制品
+    - name: 打包上传固件到Actions Artifacts
       uses: actions/upload-artifact@main
-如果: steps.organize.outputs.status == 'success' && !cancelled()
+      if: steps.organize.outputs.status == 'success' && !cancelled()
       with:
         name: ${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}
         path: ${{ env.FIRMWARE }}
 
     - name: 生成固件Release标签
-      id: 标签
+      id: tag
       if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-运行: |
-创建release.txt
+      run: |
+        touch release.txt
         echo "- 使用源码：${{ env.REPO_URL }}" >> release.txt
         echo "- 使用分支：${{ env.REPO_BRANCH }}" >> release.txt
         echo "- 登录地址：${{ env.IP_ADDR }}" >> release.txt
         echo "- 使用WiFi驱动${{ github.event.inputs.WIFI_DRIVER }}" >> release.txt
         if [[ "${{ env.EEPROM }}" == '-eeprom' ]]; then
                echo "- 使用nx30pro高功率eeprom并固定WiFi MAC地址" >> release.txt
-否则
-               echo “- 未使用nx30pro高功率eeprom未固定WiFi MAC地址” >> release.txt
+        else
+               echo "- 未使用nx30pro高功率eeprom未固定WiFi MAC地址" >> release.txt
         fi
-如果[[ "${{ env.WIFI_INTERFACE }}" == '-mtwifi' ]]; 则
+        if [[ "${{ env.WIFI_INTERFACE }}" == '-mtwifi' ]]; then
                 echo "- 使用hanwckf mtwifi-cfg原生luci无线配置工具" >> release.txt
-否则
+        else
                 echo "- 使用mtk-sdk luci-app-mtk无线配置工具" >> release.txt
         fi
         if [[ "${{ env.BUILD_DOCKERMAN }}" == '-docker' ]]; then
                 echo "- 已编译luci-app-dockerman" >> release.txt
-否则
+        else
                 echo "- 未编译luci-app-dockerman" >> release.txt
         fi
         if [[ "${{ github.event.inputs.EMMC_SPEED }}" == 'true' ]]; then
                 echo "- eMMC使用highspeed" >> release.txt
-否则
-                echo "- eMMC使用26MHz" >> release.txt
+        else
+                echo "- eMMC使用52MHz" >> release.txt
         fi
-如果[[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
+        if [[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
                 echo "- USB接口已禁用" >> release.txt
-否则
+        else
                 echo "- USB接口已启用" >> release.txt
         fi
-如果 [[ "${{ github.event.inputs.OPENCLASH }}" == 'true' ]]; 则
+        if [[ "${{ github.event.inputs.OPENCLASH }}" == 'true' ]]; then
                 echo "- 已编译科学上网" >> release.txt
-否则
-                echo “- 未编译科学上网”>> release.txt
+        else
+                echo "- 未编译科学上网" >> release.txt
         fi
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
