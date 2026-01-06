@@ -17,11 +17,11 @@ on:
       LAN_IP:
         description: 'Set LAN IP Address'
         required: true
-        default: '192.168.99.1'
+        default: '192.168.6.1'
       WIFI_DRIVER:
         description: 'Choose WiFi Driver'
         required: true
-        default: 'v7.6.7.2-fw-20240823(recommend)'
+        default: 'v7.6.6.1-fw-20230306(recommend))'
         type: choice
         options:
         - v7.6.7.2-fw-20240823(recommend)
@@ -200,15 +200,15 @@ jobs:
         fi
         echo "Use WiFi Driver: $wifi_driver-fw-$firmware"
 
-    - name: 设置eMMC频率为26MHz
-      if: github.event.inputs.EMMC_SPEED == 'false'
+    - name: 设置eMMC频率为52MHz
+      if: github.event.inputs.EMMC_SPEED == 'true'
       run: |
         cd openwrt
         if grep -q 'cap-mmc-highspeed' "${{ env.HY3000_DTS_FILE }}"; then
                 sed -i -e '/cap-mmc-highspeed;/d' "${{ env.HY3000_DTS_FILE }}"
         fi
         if grep -q 'max-frequency = <52000000>;' "${{ env.HY3000_DTS_FILE }}"; then
-                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <26000000>;/' "${{ env.HY3000_DTS_FILE }}"
+                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <52000000>;/' "${{ env.HY3000_DTS_FILE }}"
         fi
 
     - name: 禁用USB接口
@@ -246,7 +246,7 @@ jobs:
         sed -i 's/CONFIG_PACKAGE_lua-cjson=y/CONFIG_WIFI_NORMAL_SETTING=y/g' .config
 
     - name: 编译dockerman
-      if: github.event.inputs.DOCKERMAN == 'false'
+      if: github.event.inputs.DOCKERMAN == 'true'
       run: |
         cd openwrt
         sed -i '/CONFIG_PACKAGE_luci-app-dockerman=y/d' .config
@@ -354,7 +354,7 @@ jobs:
         if [[ "${{ github.event.inputs.EMMC_SPEED }}" == 'true' ]]; then
                 echo "- eMMC使用highspeed" >> release.txt
         else
-                echo "- eMMC使用26MHz" >> release.txt
+                echo "- eMMC使用52MHz" >> release.txt
         fi
         if [[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
                 echo "- USB接口已禁用" >> release.txt
