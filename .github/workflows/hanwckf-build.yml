@@ -7,8 +7,8 @@
 # https://github.com/P3TERX/Actions-OpenWrt
 # Description: Build OpenWrt using GitHub Actions
 #
-###############手动修改##############
-name: HY3000-hanwckf
+
+name: hanwckf-build
 
 on:
   repository_dispatch:
@@ -17,11 +17,11 @@ on:
       LAN_IP:
         description: 'Set LAN IP Address'
         required: true
-        default: '192.168.6.1'
+        default: '192.168.99.1'
       WIFI_DRIVER:
         description: 'Choose WiFi Driver'
         required: true
-        default: 'v7.6.6.1-fw-20230306(recommend)'
+        default: 'v7.6.7.2-fw-20240823(recommend)'
         type: choice
         options:
         - v7.6.7.2-fw-20240823(recommend)
@@ -50,8 +50,8 @@ on:
         type: boolean
       USB:
         description: 'Use USB Interface'
-        required: false
-        default: false
+        required: true
+        default: true
         type: boolean
       DOCKERMAN:
         description: 'Build luci-app-dockerman'
@@ -79,14 +79,14 @@ env:
   ###############手动修改##############
   OPENWRT_NAME: hanwckf
   UPLOAD_TAG_NAME: philips-hy3000
-  REPO_URL: https://github.com/Yuzhii0718/immortalwrt-mt798x-philips-hy3000
+  REPO_URL: https://github.com/Yuzhii0718/immortalwrt-mt798x-hanwckf
   REPO_BRANCH: openwrt-21.02
-  FEEDS_CONF: HY3000-hanwckf/feeds.conf.default
+  FEEDS_CONF: hanwckf-diy/feeds.conf.default
   HY3000_DTS_FILE: target/linux/mediatek/files-5.4/arch/arm64/boot/dts/mediatek/mt7981-philips-hy3000.dts
-  CONFIG_FILE: HY3000-hanwckf/HY3000USB.config
-  DIY_P1_SH: HY3000-hanwckf/diy-part1.sh
-  DIY_P2_SH: HY3000-hanwckf/diy-part2.sh
-  DIY_P3_SH: HY3000-hanwckf/diy-part3.sh
+  CONFIG_FILE: hanwckf-diy/.mtwifi-cfg.config
+  DIY_P1_SH: hanwckf-diy/diy-part1.sh
+  DIY_P2_SH: hanwckf-diy/diy-part2.sh
+  DIY_P3_SH: hanwckf-diy/diy-part3.sh
   SSH_ACTIONS: false
   UPLOAD_FIRMWARE: true
   UPLOAD_RELEASE: true
@@ -200,7 +200,7 @@ jobs:
         fi
         echo "Use WiFi Driver: $wifi_driver-fw-$firmware"
 
-    - name: 设置eMMC频率为52MHz
+    - name: 设置eMMC频率为26MHz
       if: github.event.inputs.EMMC_SPEED == 'false'
       run: |
         cd openwrt
@@ -208,7 +208,7 @@ jobs:
                 sed -i -e '/cap-mmc-highspeed;/d' "${{ env.HY3000_DTS_FILE }}"
         fi
         if grep -q 'max-frequency = <52000000>;' "${{ env.HY3000_DTS_FILE }}"; then
-                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <52000000>;/' "${{ env.HY3000_DTS_FILE }}"
+                sed -i -e 's/max-frequency = <52000000>; /max-frequency = <26000000>;/' "${{ env.HY3000_DTS_FILE }}"
         fi
 
     - name: 禁用USB接口
@@ -223,9 +223,9 @@ jobs:
         cd openwrt
         wifi_driver=$(echo "${{ github.event.inputs.WIFI_DRIVER }}" | sed -E 's/^(v[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+).*/\1/')
         if [ "$wifi_driver" == "v7.6.6.1" ]; then
-                cp $GITHUB_WORKSPACE/HY3000-hanwckf/mt79xx_20220907-8b55f5_eeprom.tar.xz dl/mt79xx_20220907-8b55f5.tar.xz
+                cp $GITHUB_WORKSPACE/hanwckf-diy/mt79xx_20220907-8b55f5_eeprom.tar.xz dl/mt79xx_20220907-8b55f5.tar.xz
         else
-                cp $GITHUB_WORKSPACE/HY3000-hanwckf/mt79xx_20231229-4012a0_eeprom.tar.xz dl/mt79xx_20231229-4012a0.tar.xz
+                cp $GITHUB_WORKSPACE/hanwckf-diy/mt79xx_20231229-4012a0_eeprom.tar.xz dl/mt79xx_20231229-4012a0.tar.xz
         fi
         ## 创建一个辅助文件。文件内容是写入MAC地址到dat文件，固定wifi MAC地址
         echo -e "\t\tlocal wifi0_mac=\"\$(mmc_get_mac_binary factory 0x74)\"
@@ -354,7 +354,7 @@ jobs:
         if [[ "${{ github.event.inputs.EMMC_SPEED }}" == 'true' ]]; then
                 echo "- eMMC使用highspeed" >> release.txt
         else
-                echo "- eMMC使用52MHz" >> release.txt
+                echo "- eMMC使用26MHz" >> release.txt
         fi
         if [[ "${{ github.event.inputs.USB }}" == 'false' ]]; then
                 echo "- USB接口已禁用" >> release.txt
@@ -373,7 +373,7 @@ jobs:
       uses: softprops/action-gh-release@v2.1.0
       if: steps.tag.outputs.status == 'success' && !cancelled()
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_NAME: "$(date +%Y.%m.%d)-hanwckf-philips-hy3000"
       with:
         files: ${{ env.FIRMWARE }}/*
         name: ${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}
