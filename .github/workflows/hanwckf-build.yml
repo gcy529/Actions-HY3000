@@ -369,13 +369,26 @@ env.UPLOAD_FIRMWARE ==&& !已取消()
         echo "release_tag=${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}" >> $GITHUB_OUTPUT
         echo "status=success" >> $GITHUB_OUTPUT
 
-    - name: 将固件发布到Release
-      uses: softprops/action-gh-release@v2.1.0
-      if: steps.tag.outputs.status == 'success' && !cancelled()
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # ✅ 添加冒号+空格
-      with:
-        file: ${{ env.FIRMWARE }}  # ✅ 中文"文件"改英文
-        name: ${{ env.FILE_DATE }}-${{ env.OPENWRT_NAME }}-${{ env.UPLOAD_TAG_NAME }}${{ env.WIFI_VERSION }}${{ env.EEPROM }}${{ env.BUILD_DOCKERMAN }}
-        tag_name: ${{ steps.tag.outputs.release_tag }}  # ✅ 中文"标签_名称"改英文
-        body_path: release.txt
+- name: 将固件发布到Release
+  uses: softprops/action-gh-release@v2
+  # 注意：v2.1.0 已经很老了，建议升级到 @v2（自动保持最新补丁）
+  if: steps.tag.outputs.status == 'success' && !cancelled()
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  with:
+    # 添加默认文件名，防止变量为空导致失败
+    file: ${{ env.FIRMWARE || 'firmware.bin' }}
+    
+    # 使用默认值兜底，防止名字为空
+    name: >-
+      ${{ env.FILE_DATE || 'unknown_date' }}-
+      ${{ env.OPENWRT_NAME || 'openwrt' }}-
+      ${{ env.UPLOAD_TAG_NAME || 'v1.0' }}
+      ${{ env.WIFI_VERSION || '' }}
+      ${{ env.EEPROM || '' }}
+      ${{ env.BUILD_DOCKERMAN || '' }}
+      
+    tag_name: ${{ steps.tag.outputs.release_tag || 'latest' }}
+    
+    # 如果 release.txt 可能不存在，可以加个判断或者先生成一个
+    # body_path: release.txt
